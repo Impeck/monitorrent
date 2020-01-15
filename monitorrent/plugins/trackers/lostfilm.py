@@ -465,7 +465,7 @@ class LostFilmTVTracker(object):
 
     def login(self, email, password):
         params = {"act": "users", "type": "login", "mail": email, "pass": password, "rem": 1}
-        response = requests.post("http://www.lostfilm.tv/ajaxik.php", params, verify=False)
+        response = scraper.post("https://www.lostfilm.tv/ajaxik.php", params, verify=False)
 
         result = response.json()
         if 'error' in result:
@@ -477,8 +477,8 @@ class LostFilmTVTracker(object):
         cookies = self.get_cookies()
         if not cookies:
             return False
-        my_settings_url = 'http://www.lostfilm.tv/my_settings'
-        r1 = requests.get(my_settings_url, headers=self._headers, cookies=cookies,
+        my_settings_url = 'https://www.lostfilm.tv/my_settings'
+        r1 = scraper.get(my_settings_url, headers=self._headers, cookies=cookies,
                           **self.tracker_settings.get_requests_kwargs())
         return r1.url == my_settings_url and '<meta http-equiv="refresh" content="0; url=/">' not in r1.text
 
