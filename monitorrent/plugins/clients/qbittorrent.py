@@ -3,12 +3,9 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import json
 import six
 
-import tempfile
-
-from pytz import reference, utc
+from pytz import utc
 from sqlalchemy import Column, Integer, String
 
 from qbittorrentapi import Client
@@ -16,7 +13,6 @@ from qbittorrentapi import Client
 from monitorrent.db import Base, DBSession
 from monitorrent.plugin_managers import register_plugin
 from datetime import datetime
-import dateutil.parser
 
 
 class QBittorrentCredentials(Base):
@@ -76,6 +72,10 @@ class QBittorrentClientPlugin(object):
 
             client = Client(host=address, username=cred.username, password=cred.password)
             client.app_version()
+            return QBittorrentClientPlugin._decorate_post(client)
+
+            client = Client(host=address, username=cred.username, password=cred.password)
+            client.app_version()
             return client
         
     def get_settings(self):
@@ -97,7 +97,11 @@ class QBittorrentClientPlugin(object):
             cred.password = settings.get('password', None)
 
     def check_connection(self):
-        return self._get_client()
+        try:
+            self._get_client()
+            return True
+        except:
+            return False
 
     def find_torrent(self, torrent_hash):
         client = self._get_client()
@@ -131,14 +135,13 @@ class QBittorrentClientPlugin(object):
             return False
 
         savepath = None
+        auto_tmm = None
         if torrent_settings is not None and torrent_settings.download_dir is not None:
             savepath = torrent_settings.download_dir
+            auto_tmm = False
 
-        with tempfile.NamedTemporaryFile() as tmp:
-            tmp.write(torrent)
-            tmp.flush()
-            r = client.torrents_add(save_path=savepath, torrent_files=[tmp.name])
-            return r
+        res = client.torrents_add(save_path=savepath, use_auto_torrent_management=auto_tmm, torrent_contents=[('file.torrent', torrent)])
+        return res
 
     def remove_torrent(self, torrent_hash):
         client = self._get_client()
@@ -147,6 +150,19 @@ class QBittorrentClientPlugin(object):
 
         client.torrents_delete(hashes=[torrent_hash.lower()])
         return True
+
+    @staticmethod
+    def _decorate_post(client):
+        def _post_decorator(func):
+            def _post_wrapper(*args, **kwargs):
+                if 'torrent_contents' in kwargs:
+                    kwargs['files'] = kwargs['torrent_contents']
+                    del kwargs['torrent_contents']
+                return func(*args, **kwargs)
+            return _post_wrapper
+
+        client._post = _post_decorator(client._post)
+        return client
 
 
 register_plugin('client', 'qbittorrent', QBittorrentClientPlugin())
