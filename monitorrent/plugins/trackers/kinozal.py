@@ -7,6 +7,7 @@ import pytz
 import datetime
 from requests import Session
 import requests
+import cloudscraper
 from sqlalchemy import Column, Integer, String, ForeignKey, MetaData, Table
 from monitorrent.db import Base, DBSession, UTCDateTime
 from monitorrent.plugins import Topic
@@ -16,6 +17,7 @@ from monitorrent.plugins.trackers import TrackerPluginBase, WithCredentialsMixin
 
 PLUGIN_NAME = 'kinozal.tv'
 
+scraper = cloudscraper.create_scraper()
 
 class KinozalCredentials(Base):
     __tablename__ = "kinozal_credentials"
@@ -142,7 +144,7 @@ class KinozalTracker(object):
         if match is None:
             return None
 
-        r = requests.get(url, allow_redirects=False, **self.tracker_settings.get_requests_kwargs())
+        r = scraper.get(url, allow_redirects=False, **self.tracker_settings.get_requests_kwargs())
 
         soup = get_soup(r.text)
         if soup.h1 is None:
@@ -177,7 +179,7 @@ class KinozalTracker(object):
         cookies = self.get_cookies()
         if not cookies:
             return False
-        profile_page_result = requests.get(self.profile_page, cookies=cookies,
+        profile_page_result = scraper.get(self.profile_page, cookies=cookies,
                                            **self.tracker_settings.get_requests_kwargs())
         return profile_page_result.url == self.profile_page
 
@@ -194,7 +196,7 @@ class KinozalTracker(object):
         return match.group(1)
 
     def get_last_torrent_update(self, url):
-        response = requests.get(url, **self.tracker_settings.get_requests_kwargs())
+        response = scraper.get(url, **self.tracker_settings.get_requests_kwargs())
         response.raise_for_status()
 
         soup = get_soup(response.text)
