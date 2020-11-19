@@ -20,7 +20,7 @@ PLUGIN_NAME = 'kinozal.me'
 scraper = cloudscraper.create_scraper()
 
 class KinozalCredentials(Base):
-    __tablename__ = "kinozal_credentials"
+    __tablename__ = "kinozalme_credentials"
 
     username = Column(String, primary_key=True)
     password = Column(String, primary_key=True)
@@ -29,7 +29,7 @@ class KinozalCredentials(Base):
 
 
 class KinozalTopic(Topic):
-    __tablename__ = "kinozal_topics"
+    __tablename__ = "kinozalme_topics"
 
     id = Column(Integer, ForeignKey('topics.id'), primary_key=True)
     hash = Column(String, nullable=True)
@@ -48,11 +48,11 @@ def upgrade(engine, operations_factory):
     if version == 0:
         with operations_factory() as operations:
             # remove capital later
-            operations.rename_table('Kinozal_topics', 'kinozal_topics1')
-            operations.rename_table('kinozal_topics1', KinozalTopic.__tablename__)
+            operations.rename_table('Kinozalme_topics', 'kinozalme_topics1')
+            operations.rename_table('kinozalme_topics1', KinozalTopic.__tablename__)
 
-            operations.rename_table('Kinozal_credentials', 'kinozal_credentials1')
-            operations.rename_table('kinozal_credentials1', KinozalCredentials.__tablename__)
+            operations.rename_table('Kinozalme_credentials', 'kinozalme_credentials1')
+            operations.rename_table('kinozalme_credentials1', KinozalCredentials.__tablename__)
 
             last_torrent_update = Column('last_torrent_update', UTCDateTime, nullable=True)
             operations.add_column(KinozalTopic.__tablename__, last_torrent_update)
